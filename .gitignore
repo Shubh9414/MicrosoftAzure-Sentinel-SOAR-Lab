@@ -1,9 +1,7 @@
-# Operating System files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# IDE & Editor configs
 .vscode/
 .idea/
 *.sublime-workspace
@@ -12,9 +10,7 @@ desktop.ini
 # Log files
 *.log
 
-# Diagram backups
 *.drawio.bkp
 
-# Local settings (in case you test locally)
 local.settings.json
 .env
