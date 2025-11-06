@@ -1,0 +1,16 @@
+Event
+| where Source == "Microsoft-Windows-Sysmon" and EventID == 10
+| parse EventData with 
+    * 'TargetImage">' TargetImage '</Data>' 
+    * 'GrantedAccess">' GrantedAccess '</Data>' 
+    * 'SourceImage">' SourceImage '</Data>' *
+| where TargetImage endswith "\\lsass.exe"
+| where not (SourceImage in (
+    "C:\\Windows\\System32\\svchost.exe",
+    "C:\\Windows\\System32\\taskmgr.exe",
+    "C:\\Windows\\System32\\services.exe",
+    "C:\\Windows\\System32\\wininit.exe",
+    "C:\\Windows\\System32\\lsm.exe"
+    ))
+| where GrantedAccess in ( "0x1010", "0x1410", "0x1F1FFF", "0x1038", "0x1438", "0x143a", "0x1f0fff", "0x1f2fff", "0x1f3fff" )
+| project TimeGenerated, Computer, UserName, SourceImage, TargetImage, GrantedAccess
