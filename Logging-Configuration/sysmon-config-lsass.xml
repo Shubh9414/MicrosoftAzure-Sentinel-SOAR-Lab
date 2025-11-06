@@ -1,0 +1,3 @@
+<ProcessAccess onmatch="include">
+    <TargetImage condition="image">lsass.exe</TargetImage>
+</ProcessAccess>
