@@ -241,9 +241,11 @@ A SOAR playbook was configured using Azure Logic Apps to automate the first step
 * **Response:** Posts a formatted Adaptive Card to a Microsoft Teams channel for immediate SOC analyst review.
 
 #### Logic App Workflow:
+
 <img width="343" height="480" alt="Screenshot 2025-11-06 012209" src="https://github.com/user-attachments/assets/6d7c31e7-27a1-46be-9d64-348d059661b1" />
 
 #### Final Alert:
+
 <img width="886" height="675" alt="Screenshot 2025-11-06 012401" src="https://github.com/user-attachments/assets/20073755-c0f0-45ec-8a08-2127dbb5ed94" />
 
 <details>
