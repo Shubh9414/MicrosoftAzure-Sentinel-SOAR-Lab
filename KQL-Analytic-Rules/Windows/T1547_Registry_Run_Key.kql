@@ -1,0 +1,6 @@
+Event
+| where Source == "Microsoft-Windows-Sysmon" and EventID == 13
+| parse EventData with * 'Image">' Image '</Data>' * 'TargetObject">' TargetObject '</Data>' * 
+| where TargetObject contains "CurrentVersion\\Run" or TargetObject contains "CurrentVersion\\RunOnce"
+| where Image endswith "\\reg.exe" or Image endswith "\\powershell.exe" or Image endswith "\\cmd.exe" or Image endswith "\\wscript.exe" or Image endswith "\\cscript.exe"
+| project TimeGenerated, Computer, UserName, Image, TargetObject
