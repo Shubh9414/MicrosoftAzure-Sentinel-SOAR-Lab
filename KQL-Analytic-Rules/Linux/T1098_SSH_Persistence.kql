@@ -1,0 +1,9 @@
+Syslog
+| where SyslogMessage has "type=EXECVE"
+| where SyslogMessage has "authorized_keys"
+| parse SyslogMessage with * 'a0="' A0 '"' * 'a1="' A1 '"' * 'a2="' A2 '"' *
+| where (A0 endswith "tee" or A0 endswith "echo" or A0 endswith "cat") and (A1 has "authorized_keys" or A2 has "authorized_keys" or A1 has ".ssh" or A2 has ".ssh")
+| project TimeGenerated, HostName, SyslogMessage
+  , A0 //Process
+  , A1 //Argument1
+  , A2 //Argument2
