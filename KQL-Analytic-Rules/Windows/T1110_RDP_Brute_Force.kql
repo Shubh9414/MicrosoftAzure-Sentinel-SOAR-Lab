@@ -1,0 +1,6 @@
+Event
+| where EventID == 4625
+| parse EventData with * 'IpAddress">' IpAddress "<" *
+| where isnotempty(IpAddress) and IpAddress != "-"
+| summarize count() by IpAddress, bin(TimeGenerated, 5m)
+| where count_ > 8
