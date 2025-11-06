@@ -10,7 +10,8 @@ This project simulates a real-world enterprise SOC. It includes a hybrid-cloud d
 
 This lab uses a hybrid-cloud model with endpoints in both Azure and on-premise. All logs are ingested into a central Log Analytics Workspace and monitored by Microsoft Sentinel.
 
-![Lab Architecture](Lab-Architecture.md)
+![Lab Architecture](<img width="1351" height="451" alt="SOC-Homelab drawio" src="https://github.com/user-attachments/assets/46a28a90-321f-4e5b-bd21-207229e5b315" />
+)
 
 * **SIEM/SOAR:** Microsoft Sentinel & Azure Logic Apps.
 * **Endpoints (Hybrid-Cloud):**
