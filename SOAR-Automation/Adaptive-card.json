@@ -1,1 +1,36 @@
-
+{
+  "type": "message",
+  "attachments": [
+    {
+      "contentType": "application/vnd.microsoft.card.adaptive",
+      "content": {
+        "type": "AdaptiveCard",
+        "version": "1.2",
+        "body": [
+          {
+            "type": "TextBlock",
+            "text": "New Sentinel Incident Created",
+            "weight": "bolder",
+            "size": "medium"
+          },
+          {
+            "type": "TextBlock",
+            "text": "Title: @{triggerBody()?['object']?['properties']?['title']}",
+            "wrap": true
+          },
+          {
+            "type": "TextBlock",
+            "text": "Severity: @{triggerBody()?['object']?['properties']?['severity']}",
+            "wrap": true
+          },
+          {
+            "type": "TextBlock",
+            "text": "Description: @{items('For_each')?['properties']?['description']}",
+            "wrap": true
+          }
+        ],
+        "$schema": "[http://adaptivecards.io/schemas/adaptive-card.json]
+      }
+    }
+  ]
+}
