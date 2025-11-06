@@ -1,0 +1,7 @@
+Event
+| where EventID == 4104
+| parse EventData with * '<Data Name="ScriptBlockText">' ScriptBlockText '</Data>' *
+| where isnotempty(ScriptBlockText)
+| where 
+    ( ScriptBlockText contains "IEX" or ScriptBlockText contains "Invoke-Expression" or ScriptBlockText contains "DownloadString" or ScriptBlockText contains "FromBase64String" or ScriptBlockText contains "Get-NetUser" or ScriptBlockText contains "Get-NetComputer" or ScriptBlockText contains "Get-NetGroup" or ScriptBlockText contains "Invoke-Mimikatz" or ScriptBlockText contains "System.Net.Sockets.TCPClient")
+| project TimeGenerated, UserName, Computer, RenderedDescription, ScriptBlockText
