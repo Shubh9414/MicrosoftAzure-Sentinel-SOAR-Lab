@@ -267,21 +267,21 @@ A SOAR playbook was configured using Azure Logic Apps to automate the first step
           },
           {
             "type": "TextBlock",
-            "text": "Title: @{triggerBody()?['properties']?['title']}",
+            "text": "Title: @{triggerBody()?['object']?['properties']?['title']}",
             "wrap": true
           },
           {
             "type": "TextBlock",
-            "text": "Severity: @{triggerBody()?['properties']?['severity']}",
+            "text": "Severity: @{triggerBody()?['object']?['properties']?['severity']}",
             "wrap": true
           },
           {
             "type": "TextBlock",
-            "text": "Description: @{triggerBody()?['properties']?['description']}",
+            "text": "Description: @{items('For_each')?['properties']?['description']}",
             "wrap": true
           }
         ],
-        "$schema": "[http://adaptivecards.io/schemas/adaptive-card.json](http://adaptivecards.io/schemas/adaptive-card.json)"
+        "$schema": "[http://adaptivecards.io/schemas/adaptive-card.json]
       }
     }
   ]
