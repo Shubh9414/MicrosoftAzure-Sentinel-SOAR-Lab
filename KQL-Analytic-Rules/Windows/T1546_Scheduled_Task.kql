@@ -1,0 +1,8 @@
+Event
+| where Source == "Microsoft-Windows-Sysmon" and EventID == 1
+| parse EventData with * 'Image">' Image '</Data>' * 'CommandLine">' CommandLine '</Data>' *
+| where Image endswith "\\schtasks.exe"
+| where CommandLine has "/Create" or CommandLine has "/Change"
+| where CommandLine has "/SC ONLOGON" or CommandLine has "/SC ONSTART" or CommandLine has "/SC MINUTE" or CommandLine has "/SC HOURLY"     // Runs every hour
+| where CommandLine has "/RU SYSTEM" or CommandLine has "SYSTEM"
+| project TimeGenerated, Computer, UserName, Image, CommandLine
