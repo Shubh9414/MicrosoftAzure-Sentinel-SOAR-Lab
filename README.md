@@ -276,7 +276,7 @@ A SOAR playbook was configured using Azure Logic Apps to automate the first step
             "wrap": true
           },
           {
-            "type":* "TextBlock",
+            "type": "TextBlock",
             "text": "Description: @{triggerBody()?['properties']?['description']}",
             "wrap": true
           }
