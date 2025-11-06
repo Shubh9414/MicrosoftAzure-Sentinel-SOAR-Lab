@@ -1,0 +1,6 @@
+Syslog
+| where SyslogMessage has "type=EXECVE"
+| where SyslogMessage has "/tmp/" or SyslogMessage has "/var/tmp/" or SyslogMessage has "/dev/shm/"
+| parse SyslogMessage with * 'a0="' A0 '"' * 'a1="' A1 '"' *
+| where (A0 endswith "bash" or A0 endswith "sh" or A0 endswith "zsh" or A0 endswith "perl" or A0 endswith "python") and (A1 startswith "/tmp/" or A1 startswith "/var/tmp/" or A1 startswith "/dev/shm/")
+| project TimeGenerated, HostName, SyslogMessage, A0, A1
