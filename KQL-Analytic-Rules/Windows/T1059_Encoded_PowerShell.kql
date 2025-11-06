@@ -1,0 +1,6 @@
+Event
+| where EventID == 4688
+| parse EventData with * 'NewProcessName">' Process "<" * 'CommandLine">' CommandLine "<" * 'ParentProcessName">' ParentProcessName "<" *
+| where Process endswith "\\powershell.exe" and ParentProcessName endswith "\\svchost.exe" 
+and (CommandLine contains "-e" or CommandLine contains "-en" or CommandLine contains "-enc" or CommandLine contains "-encodedcommand")
+| project TimeGenerated, CommandLine, Process, ParentProcessName
