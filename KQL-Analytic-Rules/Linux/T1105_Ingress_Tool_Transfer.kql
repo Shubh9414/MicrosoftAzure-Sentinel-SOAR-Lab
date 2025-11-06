@@ -1,0 +1,5 @@
+Syslog
+| where ProcessName in ("wget", "curl") or SyslogMessage has "wget " or SyslogMessage has "curl "
+| where SyslogMessage has "/tmp/" or SyslogMessage has "/var/tmp/" or SyslogMessage has "/dev/shm/"
+| where SyslogMessage has ".sh" or SyslogMessage has ".py" or SyslogMessage has ".elf" or SyslogMessage has ".bin"
+| project TimeGenerated, HostName, ProcessName, SyslogMessage
