@@ -1,0 +1,6 @@
+Event
+| where Source == "Microsoft-Windows-Sysmon" and EventID == 1
+| parse EventData with * 'Image">' Image '</Data>' * 'OriginalFileName">' OriginalFileName '</Data>' * 'CommandLine">' CommandLine '</Data>' *
+| where (Image has "svchost.exe" or Image has "lsass.exe" or Image has "wininit.exe" or Image has "lsm.exe")
+| where not (Image startswith "C:\\Windows\\System32\\")
+| project TimeGenerated, Computer, UserName, Image, CommandLine
