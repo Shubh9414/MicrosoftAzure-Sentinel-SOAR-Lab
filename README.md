@@ -283,7 +283,7 @@ A SOAR playbook was configured using Azure Logic Apps to automate the first step
             "wrap": true
           }
         ],
-        "$schema": "[http://adaptivecards.io/schemas/adaptive-card.json]
+        "$schema": "[http://adaptivecards.io/schemas/adaptive-card.json]"
       }
     }
   ]
