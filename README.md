@@ -1,8 +1,6 @@
 # Microsoft Sentinel Hybrid-Cloud SOC Lab
 
-A hands-on detection engineering and automation portfolio built in a hybrid Azure environment.
-
-This project simulates a real-world enterprise SOC. It includes a hybrid-cloud data pipeline, 10 custom analytic rules mapped to the MITRE ATT&CK framework, and a SOAR playbook for automated incident notification.
+A hands-on detection engineering and automation portfolio built in a hybrid Azure environment. This project simulates a real-world enterprise SOC. It includes a hybrid-cloud data pipeline, 10 custom analytic rules mapped to the MITRE ATT&CK framework, and a SOAR playbook for automated incident notification.
 
 ---
 
@@ -10,12 +8,12 @@ This project simulates a real-world enterprise SOC. It includes a hybrid-cloud d
 
 This lab uses a hybrid-cloud model with endpoints in both Azure and on-premise. All logs are ingested into a central Log Analytics Workspace and monitored by Microsoft Sentinel.
 
-### Lab Architecture<img width="1351" height="451" alt="SOC-Homelab drawio" src="https://github.com/user-attachments/assets/46a28a90-321f-4e5b-bd21-207229e5b315" />
+<img width="1351" height="451" alt="SOC-Homelab drawio" src="https://github.com/user-attachments/assets/46a28a90-321f-4e5b-bd21-207229e5b315" />
 
 
 * **SIEM/SOAR:** Microsoft Sentinel & Azure Logic Apps.
 * **Endpoints (Hybrid-Cloud):**
-    * **Cloud (Victim):** Windows VM (w/ Sysmon) & Ubuntu VM (w/ auditd).
+    * **Cloud (Victim):** Windows VM (with Sysmon) & Ubuntu VM (with auditd).
     * **On-Premise (Victim):** Ubuntu VM (w/ Azure Arc).
 * **Data Pipeline:** Azure Monitor Agent (AMA) and Data Collection Rules (DCRs) sending all logs to a central Log Analytics Workspace.
 
@@ -25,7 +23,7 @@ This lab uses a hybrid-cloud model with endpoints in both Azure and on-premise. 
 
 The core of this project is a portfolio of 10 custom-built KQL analytic rules, developed by simulating attacks and hunting for the resulting telemetry.
 
-### 🖥️ Windows Detections (7 Rules)
+### Windows Detections (7 Rules)
 
 <details>
 <summary><b>1. RDP Brute Force (T1110.001)</b></summary>
@@ -38,22 +36,21 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
     | parse EventData with * 'IpAddress">' IpAddress "<" *
     | where isnotempty(IpAddress) and IpAddress != "-"
     | summarize count() by IpAddress, bin(TimeGenerated, 5m)
-    | where count_ > 5
+    | where count_ > 8
     ```
 </details>
 
 <details>
 <summary><b>2. Encoded PowerShell (T1059.001)</b></summary>
 
-* **Description:** Detects the execution of PowerShell with encoded command flags (`-e`, `-en`, etc.), a common technique to obfuscate malicious scripts.
+* **Description:** Detects the execution of PowerShell with encoded command flags (`-e`, `-en`, `-enc`, `-encodedcommand`), a common technique to obfuscate malicious scripts.
 * **KQL:**
     ```kql
     Event
     | where EventID == 4688
     | parse EventData with * 'NewProcessName">' Process "<" * 'CommandLine">' CommandLine "<" * 'ParentProcessName">' ParentProcessName "<" *
-    | where Process endswith "\\powershell.exe" 
-        and (
-            CommandLine contains " -e " 
+    | where Process endswith "\\powershell.exe" and ParentprocessName endswith "\\svchost.exe"
+       and ( CommandLine contains " -e "
             or CommandLine contains " -en " 
             or CommandLine contains " -enc " 
             or CommandLine contains " -encodedcommand "
@@ -73,24 +70,17 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
     | parse EventData with * '<Data Name="ScriptBlockText">' ScriptBlockText '</Data>' *
     | where isnotempty(ScriptBlockText)
     | where 
-        (
-            ScriptBlockText contains "IEX" 
+        (ScriptBlockText contains "IEX" 
             or ScriptBlockText contains "Invoke-Expression"
             or ScriptBlockText contains "DownloadString"
             or ScriptBlockText contains "FromBase64String"
             or ScriptBlockText contains "Get-NetUser"
+            or ScriptBlockText contains "Get-NetComputer"
+            or ScriptBlockText contains "Get-NetGroup"
             or ScriptBlockText contains "Invoke-Mimikatz"
-            or ScriptBlockText contains "System.Net.Sockets.TCPClient"
-        )
+            or ScriptBlockText contains "System.Net.Sockets.TCPClient")
     | project 
-        TimeGenerated, 
-        Computer, 
-        UserName, 
-        RenderedDescription, 
-        ScriptBlockText
-    | extend 
-        HostName = Computer, 
-        AccountName = UserName
+        TimeGenerated, Computer, UserName, RenderedDescription, ScriptBlockText
     ```
 </details>
 
@@ -102,32 +92,15 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
     ```kql
     Event
     | where Source == "Microsoft-Windows-Sysmon" and EventID == 10
-    | parse EventData with 
-        * 'TargetImage">' TargetImage '</Data>' 
-        * 'GrantedAccess">' GrantedAccess '</Data>' 
-        * 'SourceImage">' SourceImage '</Data>' *
+    | parse EventData with * 'SourceImage">' SourceImage '</Data>' * 'TargetImage">' TargetImage '</Data>' * 'GrantedAccess">' GrantedAccess '</Data>' *
     | where TargetImage endswith "\\lsass.exe"
-    | where not (SourceImage in (
-        "C:\\Windows\\System32\\svchost.exe",
-        "C:\\Windows\\System32\\taskmgr.exe",
-        "C:\\Windows\\System32\\services.exe",
-        "C:\\Windows\\System32\\wininit.exe",
-        "C:\\Windows\\System32\\lsm.exe"
-        ))
-    | where GrantedAccess in (
-        "0x1010", "0x1410", "0x1F1FFF", "0x1038", 
-        "0x1438", "0x143a", "0x1f0fff", "0x1f2fff", "0x1f3fff"
-        )
-    | project 
-        TimeGenerated, 
-        Computer, 
-        UserName,
-        SourceImage,
-        TargetImage,
-        GrantedAccess
-    | extend 
-        HostName = Computer, 
-        AccountName = UserName
+    | where not (SourceImage in ("C:\\Windows\\System32\\svchost.exe",
+            "C:\\Windows\\System32\\taskmgr.exe",
+            "C:\\Windows\\System32\\services.exe",
+            "C:\\Windows\\System32\\wininit.exe"
+            "C:\\Windows\\System32\\lsm.exe"))
+    | where GrantedAccess in ("0x1010", "0x1410", "0x1F1FFF", "0x1038", "0x1438", "0x143a", "0x1f0fff", "0x1f2fff", "0x1f3fff")
+    | project TimeGenerated, Computer, UserName,SourceImage, TargetImage, GrantedAccess
     ```
 </details>
 
@@ -148,14 +121,7 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
          or Image endswith "\\wscript.exe"
          or Image endswith "\\cscript.exe"
     | project 
-        TimeGenerated, 
-        Computer, 
-        UserName, 
-        Image, 
-        TargetObject
-    | extend 
-        HostName = Computer, 
-        AccountName = UserName
+        TimeGenerated, Computer, UserName, Image, TargetObject
     ```
 </details>
 
@@ -169,22 +135,13 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
     | where Source == "Microsoft-Windows-Sysmon" and EventID == 1
     | parse EventData with * 'Image">' Image '</Data>' * 'CommandLine">' CommandLine '</Data>' *
     | where 
-        (
-            Image has "svchost.exe" or
+        (Image has "svchost.exe" or
             Image has "lsass.exe" or
             Image has "wininit.exe" or
-            Image has "lsm.exe"
-        )
+            Image has "lsm.exe")
     | where not (Image startswith "C:\\Windows\\System32\\")
     | project 
-        TimeGenerated, 
-        Computer, 
-        UserName, 
-        Image,
-        CommandLine
-    | extend 
-        HostName = Computer, 
-        AccountName = UserName
+        TimeGenerated, Computer, UserName, Image, CommandLine
     ```
 </details>
 
@@ -204,19 +161,11 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
         or CommandLine has "/SC MINUTE"
         or CommandLine has "/SC HOURLY"
     | where CommandLine has "/RU SYSTEM" or CommandLine has "SYSTEM"
-    | project 
-        TimeGenerated, 
-        Computer, 
-        UserName, 
-        Image,
-        CommandLine
-    | extend 
-        HostName = Computer, 
-        AccountName = UserName
+    | project TimeGenerated, Computer, UserName, Image, CommandLine
     ```
 </details>
 
-### 🐧 Linux Detections (3 Rules)
+### Linux Detections (3 Rules)
 
 <details>
 <summary><b>8. Linux Ingress Tool Transfer (T1105)</b></summary>
@@ -233,14 +182,7 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
         or SyslogMessage has ".py"
         or SyslogMessage has ".elf"
         or SyslogMessage has ".bin"
-    | project 
-        TimeGenerated, 
-        HostName, 
-        ProcessName, 
-        SyslogMessage
-    | extend 
-        HostName = HostName, 
-        AccountName = UserName
+    | project TimeGenerated, HostName, ProcessName, SyslogMessage
     ```
 </details>
 
@@ -250,35 +192,13 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
 * **Description:** Detects a process (`tee`, `echo`, `cat`) appending data to a user's `.ssh/authorized_keys` file, a common persistence technique.
 * **KQL:**
     ```kql
-    Syslog
-    | where SyslogMessage has "type=EXECVE"
-    | where SyslogMessage has "authorized_keys"
-    | extend 
-        A0 = extract('a0="([^"]*)"', 1, SyslogMessage),
-        A1 = extract('a1="([^"]*)"', 1, SyslogMessage),
-        A2 = extract('a2="([^"]*)"', 1, SyslogMessage)
-    | where 
-        (
-            A0 endswith "tee" or
-            A0 endswith "echo" or
-            A0 endswith "cat"
-        ) and 
-        (
-            A1 has "authorized_keys" or 
-            A2 has "authorized_keys" or
-            A1 has ".ssh" or
-            A2 has ".ssh"
-        )
-    | project 
-        TimeGenerated, 
-        HostName, 
-        SyslogMessage,
-        A0, // Process
-        A1, // Arg 1
-        A2  // Arg 2
-    | extend 
-        HostName = HostName, 
-        AccountName = UserName
+   Syslog
+   | where SyslogMessage has "type=EXECVE"
+   | where SyslogMessage has "authorized_keys"
+   | parse SyslogMessage with * 'a0="' A0 '"' * 'a1="' A1 '"' * 'a2="' A2 '"' *
+   | where (A0 endswith "tee" or A0 endswith "echo" or A0 endswith "cat")
+            and (A1 has "authorized_keys" or A2 has "authorized_keys" or A1 has ".ssh" or A2 has ".ssh")
+   | project TimeGenerated, HostName, SyslogMessage, A0, A1, A2
     ```
 </details>
 
@@ -306,15 +226,7 @@ The core of this project is a portfolio of 10 custom-built KQL analytic rules, d
             A1 startswith "/var/tmp/" or
             A1 startswith "/dev/shm/"
         )
-    | project 
-        TimeGenerated, 
-        HostName, 
-        SyslogMessage,
-        A0, // Process (e.g., /bin/bash)
-        A1  // Argument (e.g., /tmp/payload.sh)
-    | extend 
-        HostName = HostName, 
-        AccountName = UserName
+    | project TimeGenerated, HostName, SyslogMessage, A0, A1
     ```
 </details>
 
@@ -328,11 +240,11 @@ A SOAR playbook was configured using Azure Logic Apps to automate the first step
 * **Action:** Parses the incident data (Severity, Title, Description).
 * **Response:** Posts a formatted Adaptive Card to a Microsoft Teams channel for immediate SOC analyst review.
 
-#### Workflow:
-![Logic App Workflow](Screenshot 2025-11-06 012209.png)
+#### Logic App Workflow:
+<img width="343" height="480" alt="Screenshot 2025-11-06 012209" src="https://github.com/user-attachments/assets/6d7c31e7-27a1-46be-9d64-348d059661b1" />
 
 #### Final Alert:
-![Teams Alert](Screenshot 2025-11-06 012401.png)
+<img width="886" height="675" alt="Screenshot 2025-11-06 012401" src="https://github.com/user-attachments/assets/20073755-c0f0-45ec-8a08-2127dbb5ed94" />
 
 <details>
 <summary><b>Adaptive Card JSON Payload</b></summary>
@@ -374,3 +286,22 @@ A SOAR playbook was configured using Azure Logic Apps to automate the first step
     }
   ]
 }
+```
+</details>
+
+---
+
+## 4. Key Lessons: Logging Configuration & Troubleshooting
+This project's greatest challenge was not writing KQL, but configuring the data pipeline. Successful detection engineering requires high-quality logs.
+
+- Windows (Sysmon): Default Sysmon logging does not include Event ID 10 (ProcessAccess). To detect LSASS dumping, I edited the sysmonconfig.xml file to explicitly include this TTP, targeting lsass.exe.
+
+- Linux (auditd): This was a major logging gap. The Linux VM was not sending any command-line logs by default. The fix required a three-step process:
+
+   1. Installed the auditd service.
+
+   2. Wrote a custom rule (/etc/audit/rules.d/10-execve.rules) to force auditd to log all execve (process execution) syscalls.
+
+   3. Configured the auditd plugin (/etc/audit/plugins.d/syslog.conf) to forward these new security logs to Syslog, which was then collected by Sentinel.
+
+- Lateral Movement (T1021.002): The simulation for this TTP (PsExec/impacket) repeatedly failed. Troubleshooting proved that the Azure network layer was correct (via "IP flow verify"), but the OS-level connection was being refused. This was due to complex admin$ share and firewall-binding issues on the victim VM that could not be resolved. This is a realistic lab outcome and a documented limitation of this project.
