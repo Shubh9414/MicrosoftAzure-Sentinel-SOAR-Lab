@@ -1,0 +1,6 @@
+# The rule file was created at /etc/audit/rules.d/10-execve.rules
+# It instructs auditd to log all 'execve' (process execution) syscalls
+# for both 64-bit and 32-bit applications, and it tags them with the key "exec_rule".
+
+-a always,exit -F arch=b64 -S execve -k exec_rule
+-a always,exit -F arch=b32 -S execve -k exec_rule
